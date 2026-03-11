@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFR800 Interceptor Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            /* WICHTIG: Ersetze 'vfr800_bg.jpg' mit deinem tatsächlichen Dateinamen */
+            background: #000 url('Tacho_Hintergrund.jpg') no-repeat center center;
+            background-size: cover;
+            color: #00ffff;
+            font-family: 'Orbitron', sans-serif; 
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #speed-container {
+            text-align: center;
+            /* Neon-Glow Effekt passend zum Bild */
+            text-shadow: 
+                0 0 10px rgba(0, 255, 255, 0.8),
+                0 0 30px rgba(0, 255, 255, 0.5),
+                0 0 60px rgba(255, 0, 255, 0.4);
+        }
+
+        #speed {
+            font-size: clamp(100px, 25vw, 200px); /* Skaliert mit der Bildschirmgröße */
+            font-weight: 900;
+            margin: 0;
+            color: #fff;
+            letter-spacing: -5px;
+        }
+
+        #unit {
+            font-size: 24px;
+            display: block;
+            margin-top: -10px;
+            color: #ff00ff; /* Pinker Kontrast wie im Logo */
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #00ff00;
+            text-shadow: 0 0 5px #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="speed-container">
+        <div id="speed">0</div>
+        <div id="unit">km/h</div>
+    </div>
+
+    <div id="status">GPS Status: Suche Signal...</div>
+
+    <script>
+    const speedElement = document.getElementById('speed');
+    const statusElement = document.getElementById('status');
+
+    // Test-Funktion zur Diagnose
+    function diagnoseGPS() {
+        if (!('geolocation' in navigator)) {
+            statusElement.innerHTML = "❌ Fehler: Browser unterstützt kein GPS.";
+            return;
+        }
+
+        statusElement.innerHTML = "⏳ Suche Signal... (Prüfe Berechtigung)";
+
+        navigator.geolocation.watchPosition(
+            (position) => {
+                // Erfolg: Wir bekommen Daten!
+                let speedMS = position.coords.speed;
+                let accuracy = Math.round(position.coords.accuracy);
+                
+                if (speedMS !== null && speedMS > 0) {
+                    let speedKMH = Math.round(speedMS * 3.6);
+                    speedElement.innerText = speedKMH;
+                } else {
+                    speedElement.innerText = "0";
+                }
+                
+                statusElement.style.color = "#00ff00";
+                statusElement.innerText = `✅ Signal OK (Genauigkeit: ${accuracy}m)`;
+            },
+            (error) => {
+                // Fehler-Analyse
+                statusElement.style.color = "#ff0000";
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        statusElement.innerText = "❌ Zugriff verweigert! Bitte in Browser- & Handy-Einstellungen erlauben.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        statusElement.innerText = "❌ GPS-Signal nicht verfügbar (Bist du im Gebäude?).";
+                        break;
+                    case error.TIMEOUT:
+                        statusElement.innerText = "❌ Zeitüberschreitung. Suche dauert zu lange.";
+                        break;
+                    default:
+                        statusElement.innerText = "❌ Unbekannter Fehler: " + error.message;
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    // Start der Diagnose
+    diagnoseGPS();
+</script>
+</body>
+</html>
