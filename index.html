@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFR800 Interceptor Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000 url('Tacho_Hintergrund.jpg') no-repeat center center;
+            background-size: cover;
+            color: #00ffff;
+            font-family: 'Orbitron', sans-serif; 
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Der neue Start-Button für Android Auto Browser */
+        #startBtn {
+            position: fixed;
+            top: 20px;
+            z-index: 1000;
+            padding: 15px 30px;
+            background: #ff00ff;
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            box-shadow: 0 0 15px #ff00ff;
+            cursor: pointer;
+        }
+
+        #speed-container {
+            text-align: center;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 255, 0.8),
+                0 0 30px rgba(0, 255, 255, 0.5),
+                0 0 60px rgba(255, 0, 255, 0.4);
+            /* Ein wenig nach unten verschoben, um mittig im Tacho-Bild zu liegen */
+            margin-top: 50px; 
+        }
+
+        #speed {
+            font-size: clamp(80px, 20vw, 160px);
+            font-weight: 900;
+            margin: 0;
+            color: #fff;
+            letter-spacing: -2px;
+        }
+
+        #unit {
+            font-size: 20px;
+            display: block;
+            margin-top: -5px;
+            color: #ff00ff;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #00ff00;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="startBtn">GPS STARTEN</button>
+
+    <div id="speed-container">
+        <div id="speed">0</div>
+        <div id="unit">km/h</div>
+    </div>
+
+    <div id="status">Bereit zum Starten...</div>
+
+    <script>
+        const speedElement = document.getElementById('speed');
+        const statusElement = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+
+        function startTracking() {
+            if ('geolocation' in navigator) {
+                statusElement.innerText = "Suche Signal...";
+                
+                navigator.geolocation.watchPosition((position) => {
+                    let speedMS = position.coords.speed;
+                    let accuracy = Math.round(position.coords.accuracy);
+                    
+                    if (speedMS !== null && speedMS >= 0) {
+                        let speedKMH = Math.round(speedMS * 3.6);
+                        speedElement.innerText = speedKMH;
+                        statusElement.innerText = "Signal OK (" + accuracy + "m Präzision)";
+                        statusElement.style.color = "#00ff00";
+                    } else {
+                        speedElement.innerText = "0";
+                        statusElement.innerText = "Warte auf Bewegung...";
+                    }
+                }, (error) => {
+                    statusElement.style.color = "#ff0000";
+                    statusElement.innerText = "Fehler: " + error.message;
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                });
+            } else {
+                statusElement.innerText = "GPS nicht unterstützt";
+            }
+        }
+
+        // Klick-Event aktiviert das GPS
+        startBtn.addEventListener('click', () => {
+            startTracking();
+            startBtn.style.display = 'none'; // Button verschwindet nach Aktivierung
+        });
+    </script>
+</body>
+</html>
